@@ -484,19 +484,20 @@ intrinsic GeneratorWeightBound(G::StupidCongruenceSubgroup : experiment:=false) 
     hilbI := hilb * t^m;
 
     Q := 1 + degLC * t/(1-t)^2 + (1-g) * t/(1-t); // Riemann-Roch.
-    Q +:= t^m; // The section `f` counts as a generator.
-    
     
     // 6. The degree of this polynomial reveals the path to victory.
     poly := hilb - hilbI - Q;
     
     if experiment then
-	return g, hilb, hilbI, Q, poly;
+	return g, hilb, hilbI, Q, poly, m;
     end if;
 
     assert Denominator(poly) eq 1;
 
-    // The only generators not accounted for in the restriction come from below the weight
-    // of the section.
-    return Maximum(m, Degree(Numerator(poly)));   
+    if Degree(Numerator(poly)) ne m+1 then
+	print "Something cool happened. Please inform the developers.";
+    end if;
+
+    // The generator bound follows by the hyperplane principal.
+    return Maximum(m, Floor((2*g + 1)/degLC));
 end intrinsic;

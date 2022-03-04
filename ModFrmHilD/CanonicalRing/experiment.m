@@ -30,9 +30,10 @@ for D in [2..50] do
     PP<T> := PowerSeriesRing(Rationals(), 100);
 
     G := CongruenceSubgroup(K);
-    g, hilb, hilbI, Q, poly := GeneratorWeightBound(G : experiment:=true);
+    g, hilb, hilbI, Q, poly, m := GeneratorWeightBound(G : experiment:=true);
 
     print "den: ", Denominator(poly);
+    print "m, deg: ", m, Degree(Numerator(poly))/2;
     
     S<t> := Parent(hilb); 
     //hilbI3 := t^6 * hilb;
@@ -44,7 +45,7 @@ for D in [2..50] do
     diffy  := [(x) : x in EvenCoefficients(PP ! (hilb-hilbI))];
 
     print "m * c1(Kappa(log D)):", g;
-    print [diffy[i] - floorQ[i] : i in [2..#diffy by 1]];
+    print [diffy[i] - floorQ[i] : i in [1..#diffy by 1]];
     //print Maximum([Abs(floorQ[i] - diffy[i]) : i in [20..#floorQ]]);
     print "";
     print diffy;
