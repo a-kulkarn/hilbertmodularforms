@@ -499,5 +499,5 @@ intrinsic GeneratorWeightBound(G::StupidCongruenceSubgroup : experiment:=false) 
     end if;
 
     // The generator bound follows by the hyperplane principal.
-    return 4*Maximum(m, Floor((2*g + 1)/degLC));
+    return 4*Maximum(m, Ceiling((2*g + 1)/degLC));
 end intrinsic;
