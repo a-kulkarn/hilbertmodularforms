@@ -306,19 +306,44 @@ intrinsic CuspQuadruples(NN::RngOrdIdl, bb::RngOrdIdl : GammaType := "Gamma0") -
   return quads;
 end intrinsic;
 
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// Lifting coordinates of cusps
+//
+////////////////////////////////////////////////////////////////////////////////
+
+intrinsic _PrintResiduesInfo(residues_num, moduli_num, residues_den, moduli_den)
+{}
+  if GetVerbose("HilbertModularForms") gt 0 then
+    printf "residues for num = %o\n", residues_num;
+    printf "moduli for num = %o\n", moduli_num;
+    printf "residues for den = %o\n", residues_den;
+    printf "moduli for den = %o\n", moduli_den;
+  end if;
+  return;    
+end intrinsic;
+
+intrinsic _LiftResidues(ZF, residues, moduli) -> RngOrdElt
+{}
+  return IsEmpty(moduli) select One(ZF) else CRT(residues, moduli);
+end intrinsic;
+
 // see Lemma 5.1.10 in paper, or Lemma 3.6 of Dasgupta-Kakde
 intrinsic CuspLiftSecondCoordinate(c_bar::RngElt, ss::RngOrdFracIdl, MM::RngOrdIdl, NN::RngOrdIdl, bb::RngOrdIdl : GammaType := "Gamma0") -> RngElt 
   {With the notation as in section 5 of the paper, given c_bar in P_1(NN)_bb, lift c_bar to a c satisfying GCD(c*bb^-1,NN) = MM.}
 
   ZF := Order(ss);
   if GammaType in ["Gamma0", "Gamma1"] then
-    facts := Factorization(ss*bb*NN);
+    pleaseRenameMeSam := ss*bb*NN;
   elif GammaType eq "Gamma" then
-    facts := Factorization(ss*bb);
+    pleaseRenameMeSam := ss*bb;
   else
     error "GammaType not recognized";
   end if;
+  
   //printf "factors of ss*bb*NN: %o\n", facts;
+  facts := Factorization(pleaseRenameMeSam);
   Ps_num    := [fact[1] : fact in facts | fact[2] gt 0];
   mults_num := [fact[2] : fact in facts | fact[2] gt 0];
   Ps_den    := [fact[1] : fact in facts | fact[2] lt 0];
@@ -333,16 +358,16 @@ intrinsic CuspLiftSecondCoordinate(c_bar::RngElt, ss::RngOrdFracIdl, MM::RngOrdI
   //print "making numerator";
   for i := 1 to #Ps_num do
     P := Ps_num[i];
-    //v := mults_num[i];
-    if GammaType in ["Gamma0", "Gamma1"] then
-      v := Valuation(ss*bb*MM,P);
-    elif GammaType eq "Gamma" then
-      v := Valuation(ss*bb*NN,P);
-    else
-      error "GammaType not recognized";
-    end if;
+    notv := mults_num[i];
+    v := Valuation(pleaseRenameMeSam, P); // QUESTION: Isn't this just mults_num[i]?
 
+    assert v eq notv;
+    
     if v gt 0 then
+      // QUESTION: Isn't storing (residue, moduli) pairs redundant for moduli P^v, P^(v+1) ?
+      //           Because the only way to satisfy these congruences would be if c_bar
+      //           reduces to zero modulo P^v.	
+	
       //printf "nonzero valuation; P = %o, v = %o\n", P, v;
       residues_num cat:= [0, (c_bar mod P^(v+1))]; // might be a problem if v=0
       moduli_num   cat:= [P^v, P^(v+1)];
@@ -357,14 +382,8 @@ intrinsic CuspLiftSecondCoordinate(c_bar::RngElt, ss::RngOrdFracIdl, MM::RngOrdI
   for i := 1 to #Ps_den do
     P := Ps_den[i];
     //v := -mults_den[i];
-    if GammaType in ["Gamma0", "Gamma1"] then
-      v := -Valuation(ss*bb*MM, P);
-    elif GammaType eq "Gamma" then
-      v := -Valuation(ss*bb, P);
-    else
-      error "GammaType not recognized";
-    end if;
-
+    v := -Valuation(pleaseRenameMeSam, P);
+    
     if v gt 0 then
       //print "nonzero valuation; P = %o, v = %o\n", P, v;
       residues_den cat:= [0, (c_bar mod P^(v+1))]; // might be a problem if v=0
@@ -375,27 +394,15 @@ intrinsic CuspLiftSecondCoordinate(c_bar::RngElt, ss::RngOrdFracIdl, MM::RngOrdI
     end if;
   end for;
 
-  if GetVerbose("HilbertModularForms") gt 0 then
-    printf "residues for num = %o\n", residues_num;
-    printf "moduli for num = %o\n", moduli_num;
-    printf "residues for den = %o\n", residues_den;
-    printf "moduli for den = %o\n", moduli_den;
-  end if;
-  
-  if #moduli_num eq 0 then // if list of moduli is empty
-    c_num := ZF!1;
-  else
-    c_num := CRT(residues_num, moduli_num);
-  end if;
-  if #moduli_den eq 0 then
-    c_den := ZF!1;
-  else
-    c_den := CRT(residues_den, moduli_den);
-  end if;
+  _PrintResiduesInfo(residues_num, moduli_num, residues_den, moduli_den);
+  c_num := _LiftResidues(ZF, residues_num, moduli_num);
+  c_den := _LiftResidues(ZF, residues_den, moduli_den);
   c := c_num/c_den;
+
   if c eq 0 then
     c +:= Generators(&*moduli_num)[1];
   end if;
+
   assert GCD(c*(bb^-1),NN) eq MM;
   assert c - c_bar in ss*bb*NN;
   return c;
@@ -425,7 +432,7 @@ intrinsic CuspLiftFirstCoordinate(a_bar::RngElt, c::RngElt, ss::RngOrdIdl, MM::R
     return u*a;
   end if;
 
-  
+  // Is this code equivalent to CuspLiftSecondCoordinate?
   facts := Factorization(c*(bb^-1));
   Ps_num    := [fact[1] : fact in facts | fact[2] gt 0];
   mults_num := [Valuation((c*bb^-1), P) : P in Ps_num];
@@ -449,7 +456,7 @@ intrinsic CuspLiftFirstCoordinate(a_bar::RngElt, c::RngElt, ss::RngOrdIdl, MM::R
     if v gt 0 then
       printf "nonzero valuation; P = %o, v = %o\n", P, v;
       residues_num cat:= [0, (a_bar mod P^(v+1))]; // might be a problem if v=0
-      moduli_num cat:= [P^v, P^(v+1)];
+      moduli_num   cat:= [P^v, P^(v+1)];
     else
       vMM := Valuation(MM,P);
       if vMM gt 0 then
@@ -471,31 +478,18 @@ intrinsic CuspLiftFirstCoordinate(a_bar::RngElt, c::RngElt, ss::RngOrdIdl, MM::R
     if v gt 0 then
       print "nonzero valuation; P = %o, v = %o\n", P, v;
       residues_den cat:= [0, (a_bar mod P^(v+1))]; // might be a problem if v=0
-      moduli_den cat:= [P^v, P^(v+1)];
+      moduli_den   cat:= [P^v, P^(v+1)];
     else
       residues_den cat:= [(a_bar mod P^mults_den[i])]; // might be a problem if v=0
-      moduli_den cat:= [P^mults_den[i]];
+      moduli_den   cat:= [P^mults_den[i]];
     end if;
   end for;
 
-  if GetVerbose("HilbertModularForms") gt 0 then
-    printf "residues for num = %o\n", residues_num;
-    printf "moduli for num = %o\n", moduli_num;
-    printf "residues for den = %o\n", residues_den;
-    printf "moduli for den = %o\n", moduli_den;
-  end if;
-
-  if #moduli_num eq 0 then // if list of moduli is empty
-    a_num := ZF!1;
-  else
-    a_num := CRT(residues_num, moduli_num);
-  end if;
-  if #moduli_den eq 0 then
-    a_den := ZF!1;
-  else
-    a_den := CRT(residues_den, moduli_den);
-  end if;
+  _PrintResiduesInfo(residues_num, moduli_num, residues_den, moduli_den);
+  a_num := _LiftResidues(ZF, residues_num, moduli_num);
+  a_den := _LiftResidues(ZF, residues_den, moduli_den);
   a := a_num/a_den;
+
   assert GCD(a*ZF,c*(bb^-1)) eq ss;
   assert a - a_bar in ss*MM;
   return a;
@@ -524,6 +518,12 @@ intrinsic CuspLiftFirstCoordinate(a_bar::RngElt, c::RngElt, ss::RngOrdIdl, MM::R
   return a;
 end intrinsic;
 */
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// Computing the cusps
+//
+////////////////////////////////////////////////////////////////////////////////
 
 intrinsic Cusps(NN::RngOrdIdl, bb::RngOrdIdl : GammaType := "Gamma0") -> SeqEnum
   {}
