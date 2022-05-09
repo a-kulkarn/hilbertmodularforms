@@ -358,10 +358,10 @@ intrinsic CuspLiftSecondCoordinate(c_bar::RngElt, ss::RngOrdFracIdl, MM::RngOrdI
   //print "making numerator";
   for i := 1 to #Ps_num do
     P := Ps_num[i];
-    notv := mults_num[i];
+    whynotv := mults_num[i];
     v := Valuation(pleaseRenameMeSam, P); // QUESTION: Isn't this just mults_num[i]?
 
-    assert v eq notv;
+    assert v eq whynotv;
     
     if v gt 0 then
       // QUESTION: Isn't storing (residue, moduli) pairs redundant for moduli P^v, P^(v+1) ?
