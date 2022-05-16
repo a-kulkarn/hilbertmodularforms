@@ -489,7 +489,7 @@ intrinsic GeneratorWeightBound(G::StupidCongruenceSubgroup : experiment:=false) 
     // In the degree `m+1` term, the H^1 part of Riemann-Roch simplifies to `H^0(C, OC)`,
     // where `OC` denotes the structure sheaf. Thus, we adjust our Riemann-Roch estimate
     // by 1.
-    Q +:= (-1) * t^(m+1);
+    Q +:= t^(m+1);
     
     // 6. The degree of this polynomial reveals the path to victory.
     poly := hilb - hilbI - Q;
