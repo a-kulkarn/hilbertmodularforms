@@ -483,7 +483,13 @@ intrinsic GeneratorWeightBound(G::StupidCongruenceSubgroup : experiment:=false) 
     //    between the Hilbert series and the Hilbert series of the restriction to `Z(f)`.
     hilbI := hilb * t^m;
 
-    Q := 1 + degLC * t/(1-t)^2 + (1-g) * t/(1-t); // Riemann-Roch.
+    // Riemann-Roch.
+    Q := 1 + degLC * t/(1-t)^2 + (1-g) * t/(1-t);
+
+    // In the degree `m+1` term, the H^1 part of Riemann-Roch simplifies to `H^0(C, OC)`,
+    // where `OC` denotes the structure sheaf. Thus, we adjust our Riemann-Roch estimate
+    // by 1.
+    Q +:= (-1) * t^(m+1);
     
     // 6. The degree of this polynomial reveals the path to victory.
     poly := hilb - hilbI - Q;
@@ -494,7 +500,7 @@ intrinsic GeneratorWeightBound(G::StupidCongruenceSubgroup : experiment:=false) 
 
     assert Denominator(poly) eq 1;
 
-    if Degree(Numerator(poly)) ne m+1 then
+    if Degree(Numerator(poly)) ne m then
 	print "Something cool happened. Please inform the developers.";
     end if;
 
